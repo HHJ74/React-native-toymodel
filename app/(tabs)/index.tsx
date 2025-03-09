@@ -1,6 +1,5 @@
-import { FlatList, StyleSheet, Platform, TouchableOpacity } from 'react-native';
+import { FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { useState } from 'react';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
@@ -27,34 +26,33 @@ export default function HomeScreen() {
   );
 
   return (
-    <ParallaxScrollView 
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#fff' }}
-      headerImage={
-        <ThemedView style={styles.headerImageContainer}>
-          <ThemedText type="title" style={styles.headerText}>게시판</ThemedText>
-        </ThemedView>
-      }
-    >
-      <ThemedView style={styles.boardContainer}>
-        <FlatList
-          data={posts}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-        />
+    <ThemedView style={styles.container}>
+      <ThemedView style={styles.headerImageContainer}>
+        <ThemedText type="title" style={styles.headerText}>게시판</ThemedText>
       </ThemedView>
-    </ParallaxScrollView>
+      <FlatList
+        data={posts}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        contentContainerStyle={styles.boardContainer}
+      />
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   headerImageContainer: {
-    height: 130,  // 기존 80에서 줄임
-    justifyContent: "center",
+    height: 130,
+    justifyContent: 'center',
     alignItems: 'flex-start',
     backgroundColor: '#A1CEDC',
   },
   headerText: {
-    fontSize: 20, // 기존 24에서 줄임
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
   },
