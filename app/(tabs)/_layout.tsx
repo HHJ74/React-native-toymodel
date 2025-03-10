@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import React ,{useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import { Platform, Button } from 'react-native';
 import { logout as kakaoLogout } from '@react-native-seoul/kakao-login';
 
@@ -9,15 +9,14 @@ import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
-import { getProfile } from '@react-native-seoul/kakao-login'; 
+import { getProfile } from '@react-native-seoul/kakao-login';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
 
-  
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // ✅ useState는 최상단에서 호출
-    
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   const handleLogout = async () => {
     try {
       await kakaoLogout();
@@ -28,13 +27,13 @@ export default function TabLayout() {
   };
 
   const handleLogin = async () => {
-      router.replace('/login');
+    router.replace('/login');
   };
 
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
-        const profile = await getProfile(); // ✅ 올바른 API 사용
+        const profile = await getProfile();
         console.log("Profile fetched:", profile);
         setIsLoggedIn(!!profile);
       } catch (error) {
@@ -50,7 +49,7 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: true, // 로그아웃 버튼을 위해 헤더 표시
+        headerShown: true,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
         tabBarStyle: Platform.select({
@@ -60,14 +59,17 @@ export default function TabLayout() {
           default: {},
         }),
         headerRight: () => (
-          <Button 
-          title= {isLoggedIn ? "logout" : "login"} 
-          onPress={isLoggedIn ? handleLogout : handleLogin} 
+          <Button
+            title={isLoggedIn ? "logout" : "login"}
+            onPress={isLoggedIn ? handleLogout : handleLogin}
           />
         ),
       }}>
       <Tabs.Screen
         name="login"
+        options={{
+          href: null, // ✅ 탭 바에서 login 화면 숨기기
+        }}
       />
       <Tabs.Screen
         name="index"
@@ -80,7 +82,7 @@ export default function TabLayout() {
         name="explore"
         options={{
           title: 'Map',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="map.fill" color={color} />,
         }}
       />
     </Tabs>
