@@ -1,117 +1,83 @@
 import React, { useEffect, useState } from 'react';
-import MapView, { Marker, Polygon } from 'react-native-maps';
-import { Dimensions, StyleSheet, View } from 'react-native';
-import * as Location from "expo-location"
+import { View, StyleSheet, Dimensions } from 'react-native';
+import MapView, { Polygon } from 'react-native-maps';
+import * as Location from 'expo-location';
+import { useMapStore } from '@/stores/mapStore';
+
 
 export default function MapScreen() {
-  // 빌딩 정보
-  const [buildings, setBuildings] = useState([]);
+  const { region, polygons, setRegion, fetchPolygons } = useMapStore(); // zustand 상태와 함수 가져오기
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [region, setRegion] = useState({
-    latitude: 37.56, // 초기 중심 좌표
-    longitude: 126.98,
-    latitudeDelta: 0.05,
-    longitudeDelta: 0.02,
-  });
 
-  const [location, setLocation] = useState<Location.LocationObject | null>(
-    null
-  );
-
+  // 초기 위치 가져오기
   useEffect(() => {
     async function getCurrentLocation() {
-      let {status} =await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        console.log("Permission to access location was denied");
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('Permission to access location was denied');
         return;
-    }
+      }
 
-      let location = await Location.getCurrentPositionAsync({});
-      setLocation(location);
+
+      const location = await Location.getCurrentPositionAsync({});
+      setRegion({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.02,
+      });
     }
     getCurrentLocation();
-  }, [])
+  }, []);
 
-  // // API 호출 함수 (중심 좌표 기반)
-  // const fetchBuildings = async (latitude, longitude) => {
-  //   try {
-  //     const response = await fetch(
-  //       `http://192.168.0.51:8080/bldg/nearby?x=${longitude}&y=${latitude}&radius=200`
-  //     );
-  //     const data = await response.json();
-  //     console.log('API 데이터:', data);
-  //     setBuildings(Array.isArray(data) ? data : [data]);
-  //   } catch (error) {
-  //     console.error('API 호출 오류:', error);
-  //   }
-  // };
 
-  // // 초기 로드 시 API 호출
-  // useEffect(() => {
-  //   fetchBuildings(region.latitude, region.longitude);
-  // }, []);
+  // 버튼 클릭 핸들러
+  const handleButtonPress = async () => {
+    if (!region) return;
 
-  // 지도 이동 완료 시 호출
-  // const handleRegionChangeComplete = (newRegion) => {
-  //   setRegion(newRegion); // 새로운 중심 좌표 업데이트
-  //   fetchBuildings(newRegion.latitude, newRegion.longitude); // API 재호출
-  // };
+
+    setIsLoading(true);
+    await fetchPolygons(region.latitude, region.longitude); // zustand에서 fetchPolygons 호출
+    setIsLoading(false);
+  };
+
 
   return (
     <View style={styles.container}>
       <MapView
         style={styles.map}
-        showsUserLocation={true}
-        region={location ? {
-          latitude: location.coords.latitude, 
-          longitude: location.coords.longitude,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.02,
-        } : region}
-        // onRegionChangeComplete={handleRegionChangeComplete} // 지도 이동 시 호출
+        showsUserLocation
+        region={region || undefined}
+        onRegionChangeComplete={(newRegion) => setRegion(newRegion)} // 지도 이동 시 중심 좌표 업데이트
       >
-        {buildings.map((building, index) => {
-          const coords = building.bldg_geom.coordinates[0][0];
-          const firstCoord = coords[0];
-          return (
-            <Marker
-              key={index}
-              coordinate={{
-                latitude: firstCoord[1],
-                longitude: firstCoord[0],
-              }}
-              title={building.bldg_nm || '이름 없음'}
-              description={building.road_nm_addr}
-            />
-          );
-        })}
-
-        {buildings.map((building, index) => {
-          const coords = building.bldg_geom.coordinates[0][0];
-          return (
-            <Polygon
-              key={`polygon-${index}`}
-              coordinates={coords.map(([longitude, latitude]) => ({
-                latitude,
-                longitude,
-              }))}
-              strokeColor="#F00"
-              fillColor="rgba(255,0,0,0.3)"
-              strokeWidth={2}
-            />
-          );
-        })}
+        {polygons.map((polygon) => (
+          <Polygon
+            key={polygon.id}
+            coordinates={polygon.coordinates}
+            strokeColor="#FF0000" // 폴리곤 테두리 색상
+            fillColor="rgba(255,0,0,0.3)" // 폴리곤 내부 색상 (반투명)
+            strokeWidth={2}
+          />
+        ))}
       </MapView>
     </View>
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
   },
   map: {
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height
+    width: Dimensions.get('window').width, // Full width
+    height: Dimensions.get('window').height, // Full height
   },
 });
+
+
+

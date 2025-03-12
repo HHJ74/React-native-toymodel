@@ -2,6 +2,7 @@ import { FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { useState } from 'react';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+// import {WebView} from 'react-native-webview'
 
 type Post = {
   id: string;
@@ -27,6 +28,10 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      {/* <WebView
+      source = {{url : "https://react-jeonghh-88013499747.asia-northeast2.run.app"}}
+      style={styles.webview}
+      /> */}
       <ThemedView style={styles.headerImageContainer}>
         <ThemedText type="title" style={styles.headerText}>게시판</ThemedText>
       </ThemedView>
@@ -36,6 +41,7 @@ export default function HomeScreen() {
         renderItem={renderItem}
         contentContainerStyle={styles.boardContainer}
       />
+      
     </ThemedView>
   );
 }
@@ -65,4 +71,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     borderRadius: 8,
   },
+  webview: {
+    flex:1
+  }
 });
