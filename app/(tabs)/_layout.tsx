@@ -1,7 +1,8 @@
 import { Tabs } from 'expo-router';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { Platform, Button } from 'react-native';
-import { logout as kakaoLogout } from '@react-native-seoul/kakao-login';
+import { login as kakaoLogin, logout as kakaoLogout, getProfile } from '@react-native-seoul/kakao-login';
+import { useAuth } from '@/hooks/authContext'; // 오타 수정: authContect -> authContext
 
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -9,41 +10,27 @@ import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
-import { getProfile } from '@react-native-seoul/kakao-login';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
+  const { user, signOut } = useAuth(); // 🔹 useAuth 훅에서 user와 signOut 가져오기
+  const isLoggedIn = !!user; // 🔹 user가 있으면 로그인 상태로 간주
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // 🔹 로그인 함수: 로그인 화면으로 이동
+  const handleLogin = () => {
+    router.replace('/login');
+  };
 
+  // 🔹 로그아웃 함수: signOut 호출 후 로그인 화면으로 이동
   const handleLogout = async () => {
     try {
-      await kakaoLogout();
+      await signOut();
       router.replace('/login');
     } catch (error) {
       console.error('Logout Failed:', error);
     }
   };
-
-  const handleLogin = async () => {
-    router.replace('/login');
-  };
-
-  useEffect(() => {
-    const checkLoginStatus = async () => {
-      try {
-        const profile = await getProfile();
-        console.log("Profile fetched:", profile);
-        setIsLoggedIn(!!profile);
-      } catch (error) {
-        console.log("Login check failed:", error.message);
-        setIsLoggedIn(false);
-      }
-    };
-
-    checkLoginStatus();
-  }, []);
 
   return (
     <Tabs
@@ -53,18 +40,17 @@ export default function TabLayout() {
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
         tabBarStyle: Platform.select({
-          ios: {
-            position: 'absolute',
-          },
+          ios: { position: 'absolute' },
           default: {},
         }),
         headerRight: () => (
           <Button
-            title={isLoggedIn ? "logout" : "login"}
+            title={isLoggedIn ? 'Logout' : 'Login'}
             onPress={isLoggedIn ? handleLogout : handleLogin}
           />
         ),
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="login"
         options={{
@@ -87,8 +73,4 @@ export default function TabLayout() {
       />
     </Tabs>
   );
-}
-
-async function getKakaoProfile(): Promise<any> {
-  throw new Error('Function not implemented.');
 }
