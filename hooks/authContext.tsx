@@ -11,7 +11,20 @@ export const AuthProvider = ({ children }) => {
     const checkLoginStatus = async () => {
       try {
         const profile = await getProfile();
-        setUser(profile);
+        // 백엔드에서 사용자 정보 조회
+        const response = await fetch('http://localhost:8080/auth/me', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            // 필요 시 토큰 추가
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user); // 백엔드에서 받은 user 객체 저장
+        } else {
+          setUser(null);
+        }
       } catch (error) {
         setUser(null);
       }
@@ -24,7 +37,7 @@ export const AuthProvider = ({ children }) => {
       const token = await kakaoLogin();
       console.log('카카오 로그인 성공:', token);
       const profile = await getProfile();
-      
+
       // 백엔드로 kakao_id와 nickname 전송
       const response = await fetch('http://localhost:8080/auth/signup', {
         method: 'POST',
@@ -32,7 +45,7 @@ export const AuthProvider = ({ children }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          kakao_id: Number(profile.id), // profile.id는 string일 수 있으니 Number로 변환
+          kakao_id: Number(profile.id), // profile.id는 string이므로 Number로 변환
           nickname: profile.nickname,
         }),
       });
@@ -44,7 +57,7 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
       console.log('백엔드 응답:', data);
 
-      setUser(profile);
+      setUser(data.user); // 백엔드에서 받은 user 객체로 설정
       setError(null);
     } catch (error) {
       console.error('카카오 로그인 실패:', error);

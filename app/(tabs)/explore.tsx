@@ -3,9 +3,11 @@ import { View, StyleSheet, Dimensions, Button } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useMapStore } from '@/stores/mapStore';
+import { useAuth } from '@/hooks/authContext';
 
 export default function MapScreen() {
   const { region, setRegion } = useMapStore();
+  const { user } = useAuth();
   const [isAddingPoints, setIsAddingPoints] = useState(false);
   const [points, setPoints] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,22 +31,18 @@ export default function MapScreen() {
     getCurrentLocation();
   }, [setRegion]);
 
-  // 포인트 추가 모드 토글
   const handleAddPointsToggle = () => {
     console.log('Add points toggled to:', !isAddingPoints);
     setIsAddingPoints(!isAddingPoints);
   };
 
-  // 지도 터치로 포인트 추가
   const handleMapPress = (e) => {
     if (!isAddingPoints) return;
-
     const newPoint = e.nativeEvent.coordinate;
     console.log('New point added:', newPoint);
     setPoints([...points, newPoint]);
   };
 
-  // 마커 드래그로 포인트 이동
   const handleMarkerDrag = (index, e) => {
     const updatedPoints = [...points];
     updatedPoints[index] = e.nativeEvent.coordinate;
@@ -52,7 +50,6 @@ export default function MapScreen() {
     console.log('Point moved:', updatedPoints[index]);
   };
 
-  // 마지막 포인트 삭제
   const handleRemoveLastPoint = () => {
     if (points.length === 0) return;
     const updatedPoints = points.slice(0, -1);
@@ -60,38 +57,48 @@ export default function MapScreen() {
     console.log('Last point removed. Remaining points:', updatedPoints);
   };
 
-  // 백엔드로 포인트 저장
   const handleSavePoints = async () => {
     if (points.length === 0) return;
 
-    setIsLoading(true);
-    try {
-      const response = await fetch('http://localhost:8080/save-points', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // 필요 시 인증 토큰 추가: 'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          points: points, // [{ latitude, longitude }, ...] 형식으로 전송
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save points to backend');
-      }
-
-      const result = await response.json();
-      console.log('Points saved to backend:', result);
-      alert('포인트가 백엔드에 저장되었습니다!');
-      setPoints([]); // 저장 후 포인트 초기화 
-    } catch (error) {
-      console.error('Error saving points:', error);
-      alert('백엔드 저장에 실패했습니다.');
-    } finally {
-      setIsLoading(false);
+    if (!user || !user.userId) {
+      alert('로그인이 필요합니다.');
+      return;
     }
+
+    setIsLoading(true);
+  const payload = {
+    user_id: parseInt(user.userId, 10),
+    content: 'Sample route',
+    points: points,
+    status: 'active',
   };
+  console.log('Sending data to backend:', payload);
+
+  try {
+    const response = await fetch('http://localhost:8080/courses/save-points', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text(); // 실패 시 텍스트로 에러 메시지 읽기
+      throw new Error(`Failed to save points: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json(); // 성공 시 JSON 파싱
+    console.log('Points saved to backend:', result);
+    alert('포인트가 백엔드에 저장되었습니다!');
+    setPoints([]);
+  } catch (error) {
+    console.error('Error saving points:', error.message);
+    alert(`백엔드 저장에 실패했습니다: ${error.message}`);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <View style={styles.container}>
@@ -131,7 +138,7 @@ export default function MapScreen() {
           title="저장"
           onPress={handleSavePoints}
           color="green"
-          disabled={points.length === 0 || isLoading} // 포인트 없거나 로딩 중 비활성화
+          disabled={points.length === 0 || isLoading}
         />
       </View>
     </View>
@@ -150,7 +157,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     position: 'absolute',
     bottom: 80,
-    left: '100%',
+    left: '50%', // '100%'에서 수정
     transform: [{ translateX: -180 }],
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 10,
