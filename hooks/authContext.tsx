@@ -24,6 +24,26 @@ export const AuthProvider = ({ children }) => {
       const token = await kakaoLogin();
       console.log('카카오 로그인 성공:', token);
       const profile = await getProfile();
+      
+      // 백엔드로 kakao_id와 nickname 전송
+      const response = await fetch('http://localhost:8080/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          kakao_id: Number(profile.id), // profile.id는 string일 수 있으니 Number로 변환
+          nickname: profile.nickname,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('회원가입 요청 실패');
+      }
+
+      const data = await response.json();
+      console.log('백엔드 응답:', data);
+
       setUser(profile);
       setError(null);
     } catch (error) {

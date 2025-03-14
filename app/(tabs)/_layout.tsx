@@ -1,7 +1,6 @@
 import { Tabs } from 'expo-router';
-import React, { useState, useEffect, useCallback, useContext } from 'react';
+import React from 'react';
 import { Platform, Button } from 'react-native';
-import { login as kakaoLogin, logout as kakaoLogout, getProfile } from '@react-native-seoul/kakao-login';
 import { useAuth } from '@/hooks/authContext'; // 오타 수정: authContect -> authContext
 
 import { HapticTab } from '@/components/HapticTab';
